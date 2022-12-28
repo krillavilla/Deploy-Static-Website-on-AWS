@@ -148,6 +148,144 @@ aws s3 cp css/ s3://my-bucket-202203081/css/ --recursive
 aws s3 cp img/ s3://my-bucket-202203081/img/ --recursive
 ```
 
+### Section 4: Secure Bucket via IAM
+
+1. Click on the “Permissions” tab.
+
+![img_9.png](img_9.png)
+Go to the **Permissions** tab. See that the bucket allows public access for hosting.
+
+2. The “Bucket Policy” section shows it is empty. Click on the Edit button.
+
+![img_10.png](img_10.png)
+Empty bucket policy. Check this policy again after setting up the CloudFront distribution.
+
+3. Enter the following bucket policy replacing `your-website` with the name of your bucket and click “Save”.
+
+```
+{
+"Version":"2012-10-17",
+"Statement":[
+ {
+   "Sid":"AddPerm",
+   "Effect":"Allow",
+   "Principal": "*",
+   "Action":["s3:GetObject"],
+   "Resource":["arn:aws:s3:::your-website/*"]
+ }
+]
+}
+```
+You will see warnings about making your bucket public, but this step is required for static website hosting.
+
+_**Note** - If we were not learning about static website hosting, we could have made the bucket private and wouldn't have to specify any bucket access policy explicitly. In such a case, once we set up the **CloudFront distribution**, it will automatically update the current bucket access policy to access the bucket content. The CloudFront service will make this happen by using the **Origin Access Identity user**._
+
+### Section 5: Configure S3 Bucket
+
+1. Go to the **Properties** tab and then scroll down to edit the **Static website hosting** section.
+![img_11.png](img_11.png)
+Go to the **Properties** tab
+
+![img_12.png](img_12.png)
+Edit the **Static website hosting** section
+
+2. Click on the “Edit” button to see the **Edit static website hosting** screen. Now, enable the **Static website hosting**, and provide the default home page and error page for your website.
+
+![img_13.png](img_13.png)
+Enable the static website hosting, and provide the home page and error page.
+
+
+_Did you notice that enabling the static website hosting requires you to make your bucket public?
+In the snapshot above, it says "For your customers to access the content at the website endpoint, you must make all your content **publicly readable**._"
+
+3. For both “Index document” and “Error document”, enter “index.html” and click “Save”. After successfully saving the settings, check the **Static website hosting** section again under the **Properties** tab. You must now be able to view the [website endpoint](https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteEndpoints.html) as shown below:
+
+![img_14.png](img_14.png)
+Copy the website endpoint for future use.
+
+### Section 6: Distribute Website via CloudFront
+
+1. Select “Services” from the top left corner and enter “cloud front” in the “Find a service by name or feature” text box and select “CloudFront”.
+![img_15.png](img_15.png)
+
+2. From the CloudFront dashboard, click “Create Distribution”.
+![img_16.png](img_16.png)
+
+3. For “Select a delivery method for your content”, click “Get Started”.
+![img_17.png](img_17.png)
+
+
+4. Use the following details to create a distribution:
+
+|     |     |
+| --- | --- |
+| **Field** | **Value** |
+| Origin > Domain Name | Don't select the bucket from the dropdown list. Paste the Static website hosting endpoint of the form `<bucket-name>.s3-website-region.amazonaws.com` |
+| Origin > Enable Origin Shield | No  |
+| Default cache behavior | Use default settings |
+| Cache key and origin requests | Use default settings |
+
+![img_18.png](img_18.png)
+Configurations - Origin details
+
+
+![img_19.png](img_19.png)
+Configurations - Cache behavior, key and origin requests
+
+5.Leave the defaults for the rest of the options, and click “Create Distribution”. It may take up to 10 minutes for the CloudFront Distribution to get created.
+
+**Note**: It may take up to **_10 minutes_** for the CloudFront Distribution to be created.
+
+6. Once the status of your distribution changes from “In Progress” to “Deployed”, copy the endpoint URL for your CloudFront distribution found in the “Domain Name” column.
+
+_**Note** - Remember, as soon as your CloudFront distribution is **Deployed**, it attaches to S3 and starts caching the S3 pages. CloudFront may take 10-30 minutes (or more) to cache the S3 page. Once the caching is complete, the CloudFront domain name URL will stop redirecting to the S3 object URL._
+
+![img_20.png](img_20.png)
+
+
+In this example, the Domain Name value is `dgf7z6g067r6d.cloudfront.net`, but **_yours will be different_**.
+
+### Section 7: Access Website in Web Browser
+
+**Note** - _In the steps below, the exact domain name and the S3 URLs will be different in your case._
+
+1. Open a web browser like Google Chrome, and paste the copied CloudFront domain name (such as, `dgf7z6g067r6d.cloudfront.net`) **without appending** `/index.html` at the end. The CloudFront domain name should show you the content of the default home-page, as shown below:
+
+![img_21.png](img_21.png)
+The figure above shows the page displayed at `https://dgf7z6g067r6d.cloudfront.net`
+
+2. Access the website via website-endpoint, such as `http://<bucket-name>.s3-website.us-east-2.amazonaws.com/`.
+
+
+3. Access the bucket object via its S3 object URL, such as, `https://<bucket-name>.s3.amazonaws.com/index.html`.
+
+All three links: CloudFront domain name, S3 object URL, and website-endpoint will show you the same `index.html` content.
+
+**_If we were not "hosting" the website on S3, we could have made the bucket private and host the content only through the CloudFront domain name. In such a case, we cannot access the private content using S3 object URL and website-endpoint._**
+
+#### Troubleshooting Tip
+
+1. After completing the project instructions, if you are unable to view the website contents, refer to the following guide: [I’m using an S3 website endpoint as the origin of my CloudFront distribution. Why am I getting 403 Access Denied errors?](https://aws.amazon.com/premiumsupport/knowledge-center/s3-website-cloudfront-error-403/)
+
+
+2. Refer to this official tutorial [Using a website endpoint as the origin, with anonymous (public) access allowed](https://aws.amazon.com/premiumsupport/knowledge-center/cloudfront-serve-static-website/), and verify if you have used the correct domain for your distribution. It should essentially be the **Static website hosting** endpoint of the form `<bucket-name>.s3-website-region.amazonaws.com`
+
+![img_22.png](img_22.png)
+Use the Static website hosting endpoint to create the distribution
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
